@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
-// Supabase admin client (no cookie context needed for webhooks)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin();
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
@@ -17,6 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
+  const stripe = getStripeClient();
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
@@ -48,16 +51,11 @@ export async function POST(request: NextRequest) {
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
       const customerId = sub.customer as string;
-
       const plan = sub.status === "active" ? "pro" : "free";
 
       await supabaseAdmin
         .from("subscriptions")
-        .update({
-          stripe_subscription_id: sub.id,
-          status: sub.status,
-          plan,
-        })
+        .update({ stripe_subscription_id: sub.id, status: sub.status, plan })
         .eq("stripe_customer_id", customerId);
       break;
     }
@@ -74,7 +72,6 @@ export async function POST(request: NextRequest) {
     }
 
     default:
-      // Unhandled event — ignore
       break;
   }
 

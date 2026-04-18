@@ -1,14 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 export type MeetingAnalysis = {
   summary: string;
   action_items: { task: string; owner: string }[];
   follow_up_email: string;
 };
+
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
 export async function analyzeMeeting(transcript: string): Promise<MeetingAnalysis> {
   const prompt = `You are a professional meeting analyst. Given the following meeting transcript, return ONLY a valid JSON object with no extra text, no markdown, no backticks:
@@ -21,7 +21,7 @@ export async function analyzeMeeting(transcript: string): Promise<MeetingAnalysi
 }
 Transcript: ${transcript}`;
 
-  const message = await anthropic.messages.create({
+  const message = await getClient().messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2048,
     messages: [{ role: "user", content: prompt }],
@@ -32,6 +32,5 @@ Transcript: ${transcript}`;
     throw new Error("Unexpected response type from Anthropic");
   }
 
-  const parsed = JSON.parse(content.text) as MeetingAnalysis;
-  return parsed;
+  return JSON.parse(content.text) as MeetingAnalysis;
 }
