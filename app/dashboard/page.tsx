@@ -1,13 +1,13 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import type { Meeting, Subscription } from "@/lib/supabase";
 import MeetingCard from "@/app/components/MeetingCard";
 import UpgradeModal from "@/app/components/UpgradeModal";
 import { useRouter } from "next/navigation";
-
-const supabase = createClient();
 
 type CalendarEvent = {
   id: string;
@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [importingId, setImportingId] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
     async function init() {
       const { data: { user: u } } = await supabase.auth.getUser();
       if (!u) { router.push("/auth/login"); return; }
@@ -41,7 +42,6 @@ export default function DashboardPage() {
         avatar: meta?.avatar_url ?? meta?.picture,
       });
 
-      // Load saved meetings
       const { data: m } = await supabase
         .from("meetings")
         .select("*")
@@ -49,7 +49,6 @@ export default function DashboardPage() {
         .order("meeting_date", { ascending: false });
       setMeetings((m as Meeting[]) ?? []);
 
-      // Load subscription
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*")
@@ -60,8 +59,6 @@ export default function DashboardPage() {
       setLoadingMeetings(false);
     }
     init();
-  // supabase client is module-level stable; router from useRouter is stable
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   const fetchCalendar = useCallback(async () => {
@@ -81,7 +78,6 @@ export default function DashboardPage() {
   async function importEvent(event: CalendarEvent) {
     if (!user) return;
 
-    // Check limit
     if (subscription?.plan === "free" && (subscription?.meeting_count ?? 0) >= 3) {
       setShowUpgrade(true);
       return;
@@ -111,7 +107,7 @@ export default function DashboardPage() {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    await createClient().auth.signOut();
     router.push("/");
   }
 
@@ -127,7 +123,6 @@ export default function DashboardPage() {
             Meeting<span className="text-blue-500">Drop</span>
           </span>
           <div className="flex items-center gap-4">
-            {/* Plan badge */}
             <span
               className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                 isPro
@@ -167,7 +162,6 @@ export default function DashboardPage() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white mb-1">
             {user?.name ? `Hey, ${user.name.split(" ")[0]} 👋` : "Dashboard"}
@@ -203,7 +197,6 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Calendar events list */}
           {calendarEvents.length > 0 && (
             <div className="mt-4 space-y-2 max-h-64 overflow-y-auto pr-1">
               {calendarEvents.map((ev) => {
@@ -217,11 +210,8 @@ export default function DashboardPage() {
                       <p className="text-sm font-medium text-white truncate">{ev.title}</p>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {new Date(ev.meeting_date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
+                          month: "short", day: "numeric", year: "numeric",
+                          hour: "numeric", minute: "2-digit",
                         })}
                         {ev.attendees.length > 0 && ` · ${ev.attendees.length} attendees`}
                       </p>

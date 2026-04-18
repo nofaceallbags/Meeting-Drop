@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
@@ -8,8 +10,6 @@ import MeetingForm from "@/app/components/MeetingForm";
 import MeetingOutput from "@/app/components/MeetingOutput";
 import UpgradeModal from "@/app/components/UpgradeModal";
 import Link from "next/link";
-
-const supabase = createClient();
 
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +24,7 @@ export default function MeetingPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
@@ -48,14 +49,11 @@ export default function MeetingPage() {
       setLoading(false);
     }
     load();
-  // supabase client is module-level stable; router from useRouter is stable
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, router]);
 
   async function handleAnalyze(transcript: string) {
     if (!meeting) return;
 
-    // Check free tier limit
     if (subscription?.plan === "free" && (subscription?.meeting_count ?? 0) >= 3) {
       setShowUpgrade(true);
       return;
@@ -120,7 +118,6 @@ export default function MeetingPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1e]">
-      {/* Nav */}
       <nav className="border-b border-white/5 bg-[#0a0f1e]/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-4">
           <Link href="/dashboard" className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1.5">
@@ -144,18 +141,13 @@ export default function MeetingPage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-10">
-        {/* Meeting header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white mb-2">{meeting.title}</h1>
           <div className="flex items-center gap-4 text-sm text-slate-400 flex-wrap">
             <span>
               {new Date(meeting.meeting_date).toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
+                weekday: "long", month: "long", day: "numeric",
+                year: "numeric", hour: "numeric", minute: "2-digit",
               })}
             </span>
             {meeting.attendees && meeting.attendees.length > 0 && (
@@ -170,13 +162,8 @@ export default function MeetingPage() {
           </div>
         )}
 
-        {/* Show form or output depending on whether analysis exists */}
         {!hasOutput ? (
-          <MeetingForm
-            meeting={meeting}
-            onAnalyze={handleAnalyze}
-            analyzing={analyzing}
-          />
+          <MeetingForm meeting={meeting} onAnalyze={handleAnalyze} analyzing={analyzing} />
         ) : (
           <MeetingOutput
             meeting={meeting}
