@@ -120,7 +120,7 @@ export default function LandingPage() {
       {/* Pricing */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <h2 className="text-3xl font-bold text-center mb-4">Simple pricing</h2>
-        <p className="text-slate-400 text-center mb-12">Start free. Upgrade when you're ready.</p>
+        <p className="text-slate-400 text-center mb-12">Start free. Upgrade when you&apos;re ready.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {/* Free */}
           <div className="glass rounded-2xl p-8">

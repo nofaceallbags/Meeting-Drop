@@ -7,6 +7,8 @@ import MeetingCard from "@/app/components/MeetingCard";
 import UpgradeModal from "@/app/components/UpgradeModal";
 import { useRouter } from "next/navigation";
 
+const supabase = createClient();
+
 type CalendarEvent = {
   id: string;
   title: string;
@@ -15,7 +17,6 @@ type CalendarEvent = {
 };
 
 export default function DashboardPage() {
-  const supabase = createClient();
   const router = useRouter();
 
   const [user, setUser] = useState<{ id: string; email?: string; name?: string; avatar?: string } | null>(null);
@@ -59,7 +60,9 @@ export default function DashboardPage() {
       setLoadingMeetings(false);
     }
     init();
-  }, []);
+  // supabase client is module-level stable; router from useRouter is stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
 
   const fetchCalendar = useCallback(async () => {
     setLoadingCalendar(true);

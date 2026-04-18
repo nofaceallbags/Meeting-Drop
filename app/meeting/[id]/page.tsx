@@ -9,10 +9,11 @@ import MeetingOutput from "@/app/components/MeetingOutput";
 import UpgradeModal from "@/app/components/UpgradeModal";
 import Link from "next/link";
 
+const supabase = createClient();
+
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const supabase = createClient();
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -47,7 +48,9 @@ export default function MeetingPage() {
       setLoading(false);
     }
     load();
-  }, [id]);
+  // supabase client is module-level stable; router from useRouter is stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, router]);
 
   async function handleAnalyze(transcript: string) {
     if (!meeting) return;
